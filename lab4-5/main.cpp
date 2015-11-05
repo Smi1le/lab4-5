@@ -9,8 +9,8 @@ using namespace std;
 
 struct Files {
 	string *files = new string[0];
-	unsigned int name_size = 0;
-	unsigned int arr_size = 0;
+	unsigned int nameSize = 0;
+	unsigned int arrSize = 0;
 	string path;
 }typedef Files;
 
@@ -26,45 +26,44 @@ struct Pictures {
 	string title;
 }typedef Pictures;
 
-float get_file_size(string path) {
-	LPCTSTR file = path.c_str();
-	DWORD file_size = 0;
-	HANDLE h_File = CreateFile(file,
+float getFileSize(string path) {
+	DWORD fileSize = 0;
+	HANDLE file = CreateFile(path.c_str(),
 		GENERIC_READ,
 		0,
 		NULL,
 		OPEN_EXISTING,
 		FILE_FLAG_SEQUENTIAL_SCAN,
 		NULL);
-	if (h_File == INVALID_HANDLE_VALUE)
-		cout << "Не удается открыть файл";
-	file_size = GetFileSize(h_File, NULL);
-	if (file_size == INVALID_FILE_SIZE)
-		cout << "?? ??????? ?????????? ?????? ?????";
-	CloseHandle(h_File);
-	return file_size / 1024.0 / 1024.0;
+	if (file == INVALID_HANDLE_VALUE)
+		cout << "Не удается открыть файл" << endl;
+	fileSize = GetFileSize(file, NULL);
+	if (fileSize == INVALID_FILE_SIZE)
+		cout << "?? ??????? ?????????? ?????? ?????" << endl;
+	CloseHandle(file);
+	return fileSize / 1024.0 / 1024.0;
 }
 
-bool check_image(string file_name) {
-	if (!strrchr(file_name.c_str(), '.')) {
+bool checkImage(string fileName) {
+	if (!strrchr(fileName.c_str(), '.')) {
 		return false;
 	}
-	string list_extensions[] = { "jpg", "jpeg", "png", "gif", "bmp" };
+	string listExtensions[] = { "jpg", "jpeg", "png", "gif", "bmp" };
 	for (int i = 0; i < 5; i++) {
-		if (file_name.substr(file_name.find_last_of(".") + 1) == list_extensions[i])
+		if (fileName.substr(fileName.find_last_of(".") + 1) == listExtensions[i])
 			return true;
 	}
 	return false;
 }
 
-void init_picture(Vector2u window_size, Files files, Pictures *pic, char diraction) {
+void initPicture(Vector2u window_size, Files files, Pictures *pic, char diraction) {
 	if (!(pic->numberPic < 0)) {
 		if (!pic->error) {
 			delete(pic->sprite);
 		}
 		Image *image = new Image;
 		string path = files.path + files.files[pic->numberPic];
-		if (get_file_size(path) > 10) {
+		if (getFileSize(path) > 10) {
 			std::cout << "error (too big size) with: \n" << files.path + files.files[pic->numberPic] << '\n';
 			pic->error = true;
 		}
@@ -106,40 +105,43 @@ void init_picture(Vector2u window_size, Files files, Pictures *pic, char diracti
 		pic->sprite = new Sprite;
 		pic->sprite->setPosition(0, 0);
 		pic->sprite->setTexture(*(pic->texture));
-		pic->sprite->setOrigin(pic->texture->getSize().x / 2.0, pic->texture->getSize().y / 2.0);
-		pic->sprite->setPosition(window_size.x / 2.0, window_size.y / 2.0);
+		if (image->getSize().x > 1000 && image->getSize().y > 650) {
+			pic->sprite->setScale(float(window_size.x) / pic->texture->getSize().x, float(window_size.y) / pic->texture->getSize().y);
+		}
+		pic->sprite->setOrigin(pic->texture->getSize().x / 2.0f, pic->texture->getSize().y / 2.0f);
+		pic->sprite->setPosition(window_size.x / 2.0f, window_size.y / 2.0f);
 		pic->title = string(files.files[pic->numberPic]);
 	}
 }
 
-Files list(string &path_b) {
+Files list(string &pathOld) {
 	Files files;
-	string path = path_b +string("*");
-	files.path = path_b;
+	string path = pathOld +string("*");
+	files.path = pathOld;
 	int i = 0;
-	WIN32_FIND_DATA file_data;	
-	HANDLE d_file = FindFirstFile(path.c_str(), &file_data);
-	if (d_file != INVALID_HANDLE_VALUE) {
+	WIN32_FIND_DATA fileData;	
+	HANDLE file = FindFirstFile(path.c_str(), &fileData);
+	if (file != INVALID_HANDLE_VALUE) {
 		do {
-			if (!(file_data.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
-				files.arr_size++;
-				if (strlen(file_data.cFileName) > (files.name_size)) {
-					files.name_size = strlen(file_data.cFileName);
+			if (!(fileData.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
+				files.arrSize++;
+				if (strlen(fileData.cFileName) > (files.nameSize)) {
+					files.nameSize = strlen(fileData.cFileName);
 				}
 			}
-		} while (FindNextFile(d_file, &file_data));
+		} while (FindNextFile(file, &fileData));
 
-		files.files = new string[files.arr_size];
+		files.files = new string[files.arrSize];
 		i = 0;
-		d_file = FindFirstFile(path.c_str(), &file_data);
+		file = FindFirstFile(path.c_str(), &fileData);
 		do {
-			if (!(file_data.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
-				if (check_image(file_data.cFileName)) {
-					files.files[i] = file_data.cFileName;
+			if (!(fileData.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
+				if (checkImage(fileData.cFileName)) {
+					files.files[i] = fileData.cFileName;
 					i++;
 				}
 			}
-		} while (FindNextFile(d_file, &file_data));
+		} while (FindNextFile(file, &fileData));
 	}
 	return files;
 }
@@ -150,7 +152,7 @@ int main()
 
 	string path = "C:\\Users\\asus1\\Desktop\\downloaded_images\\";
 
-	Vector2u window_size = window.getSize();
+	Vector2u windowSize = window.getSize();
 	Files files = list(path);
 	Pictures pictures;
 
@@ -173,9 +175,6 @@ int main()
 	Text error("ERROR", font, 60);
 	error.setColor(Color(255, 0, 0));
 	error.setOrigin(strlen("ERROR") / 2 * 60, 10);
-	
-	cout << "window_size.x = " << window_size.x << endl;
-	cout << "window_size.y = " << window_size.y << endl;
 	int i = 0;
 	while (window.isOpen())
 	{
@@ -190,49 +189,22 @@ int main()
 				window.close();
 			if ((event.type == Event::MouseButtonReleased) && (event.key.code == Mouse::Left)) {
 				if (right.getGlobalBounds().contains(pos.x, pos.y)) {
-					cout << "pictures.numberPic = " << pictures.numberPic << endl;
 					if (pictures.numberPic == 0) {
-						pictures.numberPic = files.arr_size;
+						pictures.numberPic = files.arrSize;
 						i = 0;
 					}
 					pictures.numberPic--;
-					/*Image *image = new Image;
-					i++;
-					image->loadFromFile(path + files.files[i]);
-					pictures.sprite->setOrigin( image->getSize().x / 2.0, image->getSize().y / 2.0);
-					pictures.sprite->setPosition(window_size.x / 2.0, window_size.y / 2.0);*/
-					cout << " files.files[pictures.numberPic] =  " << files.files[pictures.numberPic] << endl;
-					init_picture(window_size, files, &pictures, 1);
+					initPicture(windowSize, files, &pictures, 1);
 				}
 				else if (left.getGlobalBounds().contains(pos.x, pos.y)) {
-					if (pictures.numberPic + 1 == files.arr_size) {
+					if (pictures.numberPic + 1 == files.arrSize) {
 						pictures.numberPic = 0;
-						i = files.arr_size;
-					}
-					else (pictures.numberPic++);
-					/*Image *image = new Image;
-					i++;
-					image->loadFromFile(path + files.files[i]);
-					pictures.sprite->setOrigin(window_size.x / 2.0, window_size.y / 2.0);
-					pictures.sprite->setPosition(window_size.x / 2.0, window_size.y / 2.0);*/
-					cout << " files.files[pictures.numberPic] =  " << files.files[pictures.numberPic] << endl;
-					init_picture(window_size, files, &pictures, 2);
-				}
-				if (event.type == Event::MouseMoved) {
-					if (left.getGlobalBounds().contains(pos.x, pos.y)) {
-						left.setColor(Color(255, 255, 255, 100));
+						i = files.arrSize;
 					}
 					else {
-						left.setColor(Color(255, 255, 255, 255));
+						pictures.numberPic++;
 					}
-					cout << "right.getPosition.x = " << right.getPosition().x << endl;
-					cout << "right.getPosition.y = " << right.getPosition().y << endl;
-					if (right.getGlobalBounds().contains(pos.x, pos.y)) {
-						right.setColor(Color::Green);
-					}
-					else {
-						right.setColor(Color::White);
-					}
+					initPicture(windowSize, files, &pictures, 2);
 				}
 			}
 		}

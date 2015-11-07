@@ -8,17 +8,17 @@ using namespace sf;
 using namespace std;
 
 struct Files {
-	string *files = new string[0];
+	string *files = nullptr;
 	unsigned int nameSize = 0;
 	unsigned int arrSize = 0;
 	string path;
 }typedef Files;
 
 struct Pictures {
-	Sprite *sprite = new Sprite;
-	Texture *texture = new Texture;
-	Texture *past = new Texture;
-	Texture *next = new Texture;
+	Sprite *sprite = nullptr;
+	Texture *texture = nullptr;
+	Texture *past = nullptr;
+	Texture *next = nullptr;
 	int numberPic = 0;
 	bool error = true;
 	bool ne = false;
@@ -48,10 +48,15 @@ bool checkImage(string fileName) {
 	if (!strrchr(fileName.c_str(), '.')) {
 		return false;
 	}
-	string listExtensions[] = { "jpg", "jpeg", "png", "gif", "bmp" };
-	for (int i = 0; i < 5; i++) {
-		if (fileName.substr(fileName.find_last_of(".") + 1) == listExtensions[i])
+	int i = 0;
+	string ext = fileName.substr(fileName.find_last_of(".") + 1);
+	string listExtensions[5] = { "bmp", "jpeg", "png", "gif", "jpg" };
+	while (i < 5) {
+		if (ext == listExtensions[i]) {
+			i = 5;
 			return true;
+		}
+		i++;
 	}
 	return false;
 }
@@ -59,7 +64,7 @@ bool checkImage(string fileName) {
 void initPicture(Vector2u window_size, Files files, Pictures *pic, char diraction) {
 	if (!(pic->numberPic < 0)) {
 		if (!pic->error) {
-			delete(pic->sprite);
+			delete pic->sprite;
 		}
 		Image *image = new Image;
 		string path = files.path + files.files[pic->numberPic];
@@ -80,10 +85,12 @@ void initPicture(Vector2u window_size, Files files, Pictures *pic, char diractio
 		diraction = 0;
 		if (!pic->error) {
 			if (diraction == 1) {
+				pic->next = new Texture;
 				pic->next = pic->texture;
 				pic->ne = true;
 			}
 			else if (diraction == 2) {
+				pic->past = new Texture;
 				pic->past = pic->texture;
 				pic->pr = true;
 			}
@@ -91,16 +98,17 @@ void initPicture(Vector2u window_size, Files files, Pictures *pic, char diractio
 		if (diraction == 1 && pic->pr) {
 			pic->texture = pic->past;
 			pic->pr = false;
+			delete pic->past;
 		}
 		else if (diraction == 2 && pic->ne) {
 			pic->texture = pic->next;
 			pic->ne = false;
+			delete pic->next;
 		}
 		else {
-			delete(pic->texture);
+			delete pic->texture;
 			pic->texture = new Texture;
 			pic->texture->loadFromImage(*image);
-			delete(image);
 		}
 		pic->sprite = new Sprite;
 		pic->sprite->setPosition(0, 0);
@@ -111,6 +119,7 @@ void initPicture(Vector2u window_size, Files files, Pictures *pic, char diractio
 		pic->sprite->setOrigin(pic->texture->getSize().x / 2.0f, pic->texture->getSize().y / 2.0f);
 		pic->sprite->setPosition(window_size.x / 2.0f, window_size.y / 2.0f);
 		pic->title = string(files.files[pic->numberPic]);
+		delete image;
 	}
 }
 
@@ -156,6 +165,9 @@ int main()
 	Files files = list(path);
 	Pictures pictures;
 
+	pictures.sprite = new Sprite;
+	pictures.texture = new Texture;
+
 	pictures.texture->loadFromFile(path + files.files[0]);
 	pictures.sprite->setTexture(*pictures.texture);
 
@@ -170,11 +182,11 @@ int main()
 	left.setPosition(415, 600);
 	right.setPosition(510 , 600);
 
-	Font font;
+	/*Font font;
 	font.loadFromFile("image/Monoid.ttf");
 	Text error("ERROR", font, 60);
 	error.setColor(Color(255, 0, 0));
-	error.setOrigin(strlen("ERROR") / 2 * 60, 10);
+	error.setOrigin(strlen("ERROR") / 2 * 60, 10);*/
 	int i = 0;
 	while (window.isOpen())
 	{
@@ -215,6 +227,7 @@ int main()
 		window.draw(right);
 		window.display();
 	}
-
+	delete pictures.sprite;
+	delete pictures.texture;
 	return 0;
 }
